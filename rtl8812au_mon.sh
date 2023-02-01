@@ -7,6 +7,7 @@ network_interface=$1
 export TERM='xterm-256color'
 SCRIPT_HOME=$(pwd)
 
+
 # Script files
 touch $SCRIPT_HOME/.conflicting_processes.txt
 conflicting_processes_file=$SCRIPT_HOME/.conflicting_processes.txt
@@ -19,10 +20,11 @@ conflicting_processes_file=$SCRIPT_HOME/.conflicting_processes.txt
 is_root_validation() {
 	#Validate that the current user is root
 	if [[ $USER != 'root' ]]; then
-		echo -e "[!] Run it as root"
-		exit
+		echo -e "[!] Root required"
+		sudo echo "[OK] Valid root permissions"
 	else
-		:
+		echo -e "Need to run as original user\nThe user must have administrator permissions"
+        exit
 	fi
 }
 
@@ -79,30 +81,47 @@ main_screen() {
 # Main functions
 #
 
+run_command() {
+    # $1: Command to be executed
+    # $2: Successfull message
+    # $3: Fail message
+    $1 &>/dev/null
+
+    if [[ $? == 0 ]]; then
+        echo -e "$2"
+    
+    else
+        echo -e "$3"
+        exit
+    fi
+}
+
+
 install_drivers() {
     cd /opt
+    # Remove and re-install drivers
     if (/usr/bin/ls rtl8812au &>/dev/null); then
         sudo rm -rf rtl8812au
     fi
-    git clone https://github.com/aircrack-ng/rtl8812au.git &>/dev/null
+    echo -e "\n[*] Downloading drivers..."
+    run_command "git clone https://github.com/aircrack-ng/rtl8812au.git"\
+                "[Ok] Drivers downloaded successfully"\
+                "[!] Error during driver download"
 
+    # Install drivers on system
     cd rtl8812au
-    make &>/dev/null
-    sudo make install &>/dev/null
+    echo -e "\n[*] Installing drivers... [1/2]"
+    run_command "make"\
+                "[Ok] Drivers installed successfully"\
+                "[!] Error during drivers installation\nManual installation is recommended\nIn the driver directory, try: \n  1: make\n  2: sudo make install"
+    echo -e "\n[*] Installing drivers... [2/2]"
+    run_command "sudo make install"\
+                "[Ok] Drivers installed successfully"\
+                "[!] Error during drivers installation\nManual installation is recommended\nIn the driver directory, try: \n  1: make\n  2: sudo make install"
 
-    if [$? == 0]; then
-        echo -e "Drivers installation was successful"
-        echo -e "\nDriver installation will finish after reboot"
-    
-    else
-        echo -e "Drivers installation failed"
-        echo -e "Manual installation is recommended\nIn the driver directory, try: \n  1: make\n  2: sudo make install"
-        exit
-    fi
-    
-    
+    # Ask for restart
     while true; do
-        read -p "Do you want to reboot now? [Y/n] " restart
+        read -p "\n[?] Do you want to reboot now? [Y/n] " restart
 
         if [[ $restart == '' || $restart == 'Y' || $restart == 'y' ]]; then
             sudo systemctl reboot
@@ -117,6 +136,7 @@ install_drivers() {
         fi
     done 
 }
+
 
 select_network_interface() {
     # Select available network interfaces but excluding ethernet and loopback interfaces.
