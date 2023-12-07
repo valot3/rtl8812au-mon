@@ -28,11 +28,12 @@ is_root_validation() {
 	fi
 }
 
+
+
 # ==================================================
 #
 # Banners 
 #
-
 title_banner() {
 
     echo -e "\n\n\n"
@@ -43,11 +44,12 @@ title_banner() {
     
 }
 
+
+
 # ==================================================
 #
-#
+# Main functions
 # 
-
 main_screen() {
 	network_interface_mode=$(iw dev $network_interface info | grep 'type' | cut -d " " -f 2)
     
@@ -74,12 +76,6 @@ main_screen() {
     echo -e "\n"
 }
 
-
-
-# ==================================================
-#
-# Main functions
-#
 
 run_command() {
     # $1: Command to be executed
@@ -300,12 +296,12 @@ set_managed_mode() {
 	read -p "Press [ENTER] to continue..." answer
 }
 
+
+
 # ==================================================
 #
 # Main
 #
-
-
 is_root_validation
 
 while true; do
